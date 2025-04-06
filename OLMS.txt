@@ -1,0 +1,230 @@
+--CREATE DATABASE Library_Management_System;
+USE Library_Management_System;  
+--CREATE TABLE Members (
+    Member_id INT PRIMARY KEY AUTO_INCREMENT,
+    Member_name VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Phone VARCHAR(20) UNIQUE,
+    Registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Books (
+    Book_id INT PRIMARY KEY AUTO_INCREMENT,
+    Title VARCHAR(255) NOT NULL,
+    Author VARCHAR(255),
+    Genre VARCHAR(100),
+    Quantity INT DEFAULT 0,
+    Added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Borrow (
+    Borrow_id INT PRIMARY KEY AUTO_INCREMENT,
+    Book_id INT,
+    Member_id INT,
+    Borrow_date DATE,
+    Return_date DATE,
+    Status VARCHAR(50) DEFAULT 'Borrowed',
+    FOREIGN KEY (Book_id) REFERENCES Books(Book_id) ON DELETE CASCADE,
+    FOREIGN KEY (Member_id) REFERENCES Members(Member_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Reviews (
+    Review_id INT PRIMARY KEY AUTO_INCREMENT,
+    Book_id INT,
+    Member_id INT,
+    Rating INT CHECK (Rating BETWEEN 1 AND 5),
+    Review_text TEXT,
+    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Book_id) REFERENCES Books(Book_id) ON DELETE CASCADE,
+    FOREIGN KEY (Member_id) REFERENCES Members(Member_id) ON DELETE CASCADE
+);
+--INSERT INTO Members (Member_name, Email, Phone) VALUES
+('John Doe', 'john@example.com', '1111111111'),
+('Jane Smith', 'jane@example.com', '2222222222'),
+('Mike Brown', 'mike@example.com', '3333333333'),
+('Emily Davis', 'emily@example.com', '4444444444'),
+('Daniel Wilson', 'daniel@example.com', '5555555555'),
+('Laura Johnson', 'laura@example.com', '6666666666'),
+('Chris Evans', 'chris@example.com', '7777777777'),
+('Olivia White', 'olivia@example.com', '8888888888'),
+('Liam Green', 'liam@example.com', '9999999999'),
+('Sophia Black', 'sophia@example.com', '1010101010'),
+('James Hall', 'james@example.com', '1212121212'),
+('Ella Young', 'ella@example.com', '1313131313'),
+('Noah King', 'noah@example.com', '1414141414'),
+('Ava Wright', 'ava@example.com', '1515151515'),
+('Lucas Scott', 'lucas@example.com', '1616161616');
+INSERT INTO Books (Title, Author, Genre, Quantity) VALUES
+('The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction', 5),
+('1984', 'George Orwell', 'Dystopian', 3),
+('Clean Code', 'Robert C. Martin', 'Programming', 4),
+('To Kill a Mockingbird', 'Harper Lee', 'Fiction', 2),
+('Brave New World', 'Aldous Huxley', 'Dystopian', 3),
+('The Pragmatic Programmer', 'Andrew Hunt', 'Programming', 5),
+('Pride and Prejudice', 'Jane Austen', 'Romance', 6),
+('Thinking, Fast and Slow', 'Daniel Kahneman', 'Psychology', 2),
+('The Alchemist', 'Paulo Coelho', 'Fiction', 7),
+('Deep Work', 'Cal Newport', 'Self-help', 4),
+('Atomic Habits', 'James Clear', 'Self-help', 6),
+('Moby Dick', 'Herman Melville', 'Classic', 2),
+('Crime and Punishment', 'Fyodor Dostoevsky', 'Classic', 3),
+('The Lean Startup', 'Eric Ries', 'Business', 5),
+('The Hobbit', 'J.R.R. Tolkien', 'Fantasy', 6);
+INSERT INTO Borrow (Book_id, Member_id, Borrow_date, Return_date, Status) VALUES
+(1, 1, '2025-04-01', NULL, 'Borrowed'),
+(2, 2, '2025-04-02', '2025-04-06', 'Returned'),
+(3, 3, '2025-04-03', NULL, 'Borrowed'),
+(4, 4, '2025-04-01', NULL, 'Borrowed'),
+(5, 5, '2025-04-04', NULL, 'Borrowed'),
+(6, 6, '2025-04-02', NULL, 'Borrowed'),
+(7, 7, '2025-04-05', NULL, 'Borrowed'),
+(8, 8, '2025-04-06', NULL, 'Borrowed'),
+(9, 9, '2025-04-01', NULL, 'Borrowed'),
+(10, 10, '2025-04-02', NULL, 'Borrowed'),
+(11, 11, '2025-04-03', NULL, 'Borrowed'),
+(12, 12, '2025-04-04', NULL, 'Borrowed'),
+(13, 13, '2025-04-05', NULL, 'Borrowed'),
+(14, 14, '2025-04-06', NULL, 'Borrowed'),
+(15, 15, '2025-04-01', NULL, 'Borrowed');
+INSERT INTO Reviews (Book_id, Member_id, Rating, Review_text) VALUES
+(1, 1, 5, 'An amazing read!'),
+(2, 2, 4, 'Thought-provoking and powerful.'),
+(3, 3, 5, 'Excellent programming principles.'),
+(4, 4, 5, 'A powerful and emotional book.'),
+(5, 5, 3, 'Interesting but a bit slow.'),
+(6, 6, 4, 'Helpful tips for developers.'),
+(7, 7, 5, 'A timeless romance.'),
+(8, 8, 4, 'Makes you reflect deeply.'),
+(9, 9, 5, 'Inspirational journey.'),
+(10, 10, 4, 'Great advice for productivity.'),
+(11, 11, 5, 'Changed my habits!'),
+(12, 12, 3, 'Tough to get into but rewarding.'),
+(13, 13, 5, 'A psychological masterpiece.'),
+(14, 14, 4, 'Great insights into startups.'),
+(15, 15, 5, 'A magical adventure!');
+--1.Create a Stored Procedure to get Borrowing History for a Member
+DELIMITER //
+CREATE PROCEDURE GetBorrowHistory(IN member_id INT)
+BEGIN
+    SELECT b.Borrow_id, bk.Title, b.Borrow_date, b.Return_date, b.Status
+    FROM Borrow b
+    JOIN Books bk ON b.Book_id = bk.Book_id
+    WHERE b.Member_id = member_id;
+END //
+DELIMITER ;
+
+-- Example call:
+CALL GetBorrowHistory(1);
+
+--2.Create a Stored Procedure to Get Overdue Books
+DELIMITER //
+CREATE PROCEDURE GetOverdueBooks()
+BEGIN
+    SELECT b.Borrow_id, m.Member_name, bk.Title, b.Borrow_date
+    FROM Borrow b
+    JOIN Members m ON b.Member_id = m.Member_id
+    JOIN Books bk ON b.Book_id = bk.Book_id
+    WHERE b.Status = 'Borrowed'
+      AND DATEDIFF(CURDATE(), b.Borrow_date) > 14;  -- 14-day lending period
+END //
+DELIMITER ;
+
+-- Example call:
+CALL GetOverdueBooks();
+
+--3.Create a Stored Procedure to Top Rated Books
+DELIMITER //
+CREATE PROCEDURE GetTopRatedBooks()
+BEGIN
+    SELECT bk.Book_id, bk.Title, AVG(r.Rating) AS Avg_Rating, COUNT(r.Review_id) AS Total_Reviews
+    FROM Reviews r
+    JOIN Books bk ON r.Book_id = bk.Book_id
+    GROUP BY bk.Book_id, bk.Title
+    ORDER BY Avg_Rating DESC
+    LIMIT 5;
+END //
+DELIMITER ;
+
+-- Example call:
+CALL GetTopRatedBooks();
+
+--4.Create a Stored Procedure to Check Book Availability
+DELIMITER //
+CREATE PROCEDURE CheckBookAvailability(IN book_id INT)
+BEGIN
+    SELECT Title, Quantity
+    FROM Books
+    WHERE Book_id = book_id;
+END //
+DELIMITER ;
+
+-- Example call:
+CALL CheckBookAvailability(3);
+
+--5.Create a Stored Procedure to Search Books by Title or Author
+DELIMITER //
+CREATE PROCEDURE SearchBooks(IN search_term VARCHAR(255))
+BEGIN
+    SELECT *
+    FROM Books
+    WHERE Title LIKE CONCAT('%', search_term, '%')
+       OR Author LIKE CONCAT('%', search_term, '%');
+END //
+DELIMITER ;
+
+-- Example call:
+CALL SearchBooks('Clean');
+
+--6.Create a Stored Procedure to Get All Reviews for a Book
+DELIMITER //
+CREATE PROCEDURE GetReviewsForBook(IN book_id INT)
+BEGIN
+    SELECT m.Member_name, r.Rating, r.Review_text, r.Created_at
+    FROM Reviews r
+    JOIN Members m ON r.Member_id = m.Member_id
+    WHERE r.Book_id = book_id;
+END //
+DELIMITER ;
+
+-- Example call:
+CALL GetReviewsForBook(1);
+
+--7.Create a Stored Procedure to Average Rating per Genre
+DELIMITER //
+CREATE PROCEDURE GetGenreRatings()
+BEGIN
+    SELECT b.Genre, AVG(r.Rating) AS AvgRating
+    FROM Reviews r
+    JOIN Books b ON r.Book_id = b.Book_id
+    GROUP BY b.Genre;
+END //
+DELIMITER ;
+
+-- Example call:
+CALL GetGenreRatings();
+
+--8.Create a Stored Procedure to Get reviews for a specific book
+DELIMITER //
+CREATE PROCEDURE GetReviewsByBook(IN book_id INT)
+BEGIN
+    SELECT * FROM Reviews WHERE Book_id = book_id;
+END //
+DELIMITER ;
+
+--9.Create a Stored Procedure to Check book stock
+DELIMITER //
+CREATE PROCEDURE CheckBookStock(IN b_id INT)
+BEGIN
+    SELECT Title, Quantity FROM Books WHERE Book_id = b_id;
+END //
+DELIMITER ;
+
+--10.Create a Stored Procedure to  Add new review
+DELIMITER //
+CREATE PROCEDURE AddBookReview(IN b_id INT, IN m_id INT, IN rate INT, IN review_text TEXT)
+BEGIN
+    INSERT INTO Reviews (Book_id, Member_id, Rating, Review_text)
+    VALUES (b_id, m_id, rate, review_text);
+END //
+DELIMITER ;
+
